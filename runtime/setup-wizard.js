@@ -111,7 +111,40 @@ async function runSetupWizard(context, manager, outputChannel, force = false) {
     return false;
   }
 
-  // 3. MCP überall eintragen
+  // 3. Master-API-Key automatisch claimen (nur beim ersten Setup)
+  const existingKey = context.globalState.get("masterApiKey", "");
+  if (!existingKey) {
+    try {
+      const masterKey = await new Promise((resolve) => {
+        const http = require("http");
+        const req = http.request(
+          { hostname: "localhost", port: ttsPort, path: "/api/setup", method: "GET", timeout: 5000 },
+          (res) => {
+            let body = "";
+            res.on("data", (c) => (body += c));
+            res.on("end", () => {
+              try { resolve(JSON.parse(body).masterKey || null); }
+              catch { resolve(null); }
+            });
+          }
+        );
+        req.on("error", () => resolve(null));
+        req.end();
+      });
+      if (masterKey) {
+        await context.globalState.update("masterApiKey", masterKey);
+        await context.globalState.update("masterKeyClaimed", true);
+        outputChannel.appendLine("[Setup] Master-Key geclaimed und gespeichert");
+        vscode.window.showInformationMessage("🔑 Admin-Key gespeichert — jederzeit im Dashboard → Admin einsehbar");
+      } else {
+        outputChannel.appendLine("[Setup] Master-Key bereits geclaimed oder nicht verfügbar");
+      }
+    } catch (e) {
+      outputChannel.appendLine(`[Setup] Master-Key claim fehlgeschlagen: ${e.message}`);
+    }
+  }
+
+  // 5. MCP überall eintragen
   if (workspaceDir) {
     deployMcp(path.join(workspaceDir, ".vscode", "mcp.json"), outputChannel);
     const skillSrc = path.join(workspaceDir, "skills", "tts-de", "SKILL.md");
@@ -123,7 +156,7 @@ async function runSetupWizard(context, manager, outputChannel, force = false) {
     if (fs.existsSync(dir)) deployMcp(path.join(dir, "mcp.json"), outputChannel);
   }
 
-  // 4. Fertig
+  // 6. Fertig
   await context.globalState.update("zeroTokenTts.setupCompleted", true);
   vscode.window.showInformationMessage(
     "✅ Zero-Token TTS bereit — MCP + Skill registriert.",
