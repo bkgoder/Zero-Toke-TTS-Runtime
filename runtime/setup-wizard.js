@@ -157,6 +157,7 @@ async function runSetupWizard(context, manager, outputChannel, force = false) {
   if (workspaceDir) {
     deployMcp(path.join(workspaceDir, ".vscode", "mcp.json"), outputChannel);
     const skillSrc = path.join(workspaceDir, "skills", "tts-de", "SKILL.md");
+    deploySkill(skillSrc, path.join(workspaceDir, ".github", "skills", "tts-de", "SKILL.md"), outputChannel);
     deploySkill(skillSrc, path.join(workspaceDir, ".github", "copilot-instructions.md"), outputChannel);
     deploySkill(skillSrc, path.join(workspaceDir, ".vscode", "tts-de.instructions.md"), outputChannel);
   }

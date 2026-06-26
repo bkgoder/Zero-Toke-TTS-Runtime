@@ -311,6 +311,9 @@ deploy_skill() {
 echo ""
 echo "🤖 Deploye TTS-Skill zu Agents..."
 
+# Standarderkennbarer Skill-Pfad für VS Code/Copilot
+deploy_skill "$SCRIPT_DIR/.github/skills/tts-de/SKILL.md"
+
 # Workspace Copilot Instructions
 deploy_skill "$SCRIPT_DIR/.github/copilot-instructions.md"
 

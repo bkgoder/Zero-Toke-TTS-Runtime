@@ -9,7 +9,7 @@ Der Benutzer spricht Deutsch. **Jede Antwort automatisch vorlesen.**
 
 ## Methode 1 — Extension-Proxy (bevorzugt)
 
-```
+```bash
 POST http://localhost:18766/speak
 Content-Type: application/json
 {"text": "Deine Antwort hier...", "source": "agent"}
@@ -56,7 +56,6 @@ curl localhost:18765/health   # → {"status":"ok"}
 - Wenn 18766 nicht antwortet: `docker compose up -d`
 - Stimme: Piper Eva (de_DE, 16000 Hz Mono WAV)
 - Geschwindigkeit: `speed` 0.5–2.0 (Standard 1.0)
-Zeigt:
 - Server-Status (Start/Stop/Neustart)
 - Verfügbare Piper-Modelle (Eva, Thorsten, Alan, Amy)
 - Download-Status pro Modell
