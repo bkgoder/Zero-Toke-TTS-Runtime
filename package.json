@@ -2,7 +2,7 @@
   "name": "zero-token-tts",
   "displayName": "Zero-Token TTS",
   "description": "Lokales Text-to-Speech Voice Studio für VS Code mit verifiziertem Runtime-Bootstrap, Stimmenverwaltung und Verlauf.",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "publisher": "forgefabrik",
   "private": true,
   "license": "SEE LICENSE IN LICENSE",
