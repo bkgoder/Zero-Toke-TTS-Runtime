@@ -1,3 +1,14 @@
 {
-	"servers": {}
+  "servers": {
+    "tts-skill": {
+      "type": "sse",
+      "url": "http://localhost:18764/sse"
+    }
+  },
+  "mcpServers": {
+    "tts-skill": {
+      "type": "sse",
+      "url": "http://localhost:18764/sse"
+    }
+  }
 }

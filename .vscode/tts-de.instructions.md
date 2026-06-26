@@ -1,3 +1,8 @@
+---
+name: tts-de
+description: "Zero-Token TTS for German workflows: answer in German, speak every response, use the extension proxy or MCP tools, and keep the user in the TTS loop."
+---
+
 # Zero-Token TTS — Automatische Sprachausgabe (Deutsch)
 
 Der Benutzer spricht Deutsch. **Jede Antwort automatisch vorlesen.**

@@ -340,13 +340,13 @@ deploy_skill "$SCRIPT_DIR/.vscode/tts-de.instructions.md"
 # 11. Extension installieren (falls code CLI verfügbar)
 echo ""
 VSIX_FILE=$(ls "$SCRIPT_DIR"/zero-token-explotion-*.vsix "$SCRIPT_DIR"/zero-token-tts-*.vsix 2>/dev/null | tail -1)
-if [ -n "$VSIX_FILE" ] && command -v code &> /dev/null; then
-  echo "📥 Installiere Extension..."
-  code --install-extension "$VSIX_FILE" --force
-  echo "✅ Extension installiert: $(basename "$VSIX_FILE")"
-else
-  echo "📋 Extension manuell installieren:"
-  echo "   code --install-extension $(ls "$SCRIPT_DIR"/*.vsix 2>/dev/null | tail -1 | xargs basename 2>/dev/null || echo 'zero-token-tts-*.vsix')"
+if [ -n "$VSIX_FILE" ]; then
+  if command -v code &> /dev/null && code --install-extension "$VSIX_FILE" --force 2>/dev/null; then
+    echo "✅ Extension installiert: $(basename "$VSIX_FILE")"
+  else
+    echo "📋 Extension manuell installieren:"
+    echo "   code --install-extension $(basename "$VSIX_FILE")"
+  fi
 fi
 
 # 12. Fertig
