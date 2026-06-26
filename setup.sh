@@ -55,6 +55,132 @@ ensure_node() {
     echo "✅ Node.js $(node -v) via nvm aktiviert"
 }
 
+ensure_docker() {
+    if command -v docker &> /dev/null; then
+        echo "✅ Docker $(docker --version | cut -d' ' -f3 | tr -d ',') gefunden"
+        return 0
+    fi
+
+    echo "🐳 Docker nicht gefunden — installiere Docker..."
+
+    # Detect OS
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        OS_ID="${ID:-linux}"
+    else
+        OS_ID="linux"
+    fi
+
+    case "$OS_ID" in
+        ubuntu|debian)
+            echo "   📦 Installiere Docker für $OS_ID..."
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq ca-certificates curl gnupg lsb-release
+
+            # Add Docker's official GPG key
+            sudo install -m 0755 -d /etc/apt/keyrings
+            curl -fsSL https://download.docker.com/linux/$OS_ID/gpg | sudo gpg --dearmor --yes -o /etc/apt/keyrings/docker.gpg
+            sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+            # Add Docker repository
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/$OS_ID $(lsb_release -cs) stable" | \
+                sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+            sudo apt-get update -qq
+            sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+            # Add user to docker group (no sudo required in future)
+            sudo usermod -aG docker "$USER" 2>/dev/null || true
+
+            # Start Docker daemon
+            sudo systemctl enable docker 2>/dev/null || true
+            sudo systemctl start docker 2>/dev/null || true
+
+            # Fallback: use newgrp or sg to apply group
+            if ! docker ps &>/dev/null; then
+                echo "   ℹ️  Docker-Gruppe gesetzt — verwende 'newgrp docker' oder neu einloggen."
+                # Run with sudo for this session
+                DOCKER_CMD="sudo docker"
+            fi
+
+            echo "✅ Docker installiert"
+            ;;
+
+        fedora|rhel|centos)
+            echo "   📦 Installiere Docker für $OS_ID..."
+            sudo dnf -y install dnf-plugins-core
+            sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+            sudo dnf -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+            sudo systemctl enable docker && sudo systemctl start docker
+            sudo usermod -aG docker "$USER" 2>/dev/null || true
+            echo "✅ Docker installiert"
+            ;;
+
+        arch|manjaro)
+            echo "   📦 Installiere Docker für $OS_ID..."
+            sudo pacman -Sy --noconfirm docker docker-compose
+            sudo systemctl enable docker && sudo systemctl start docker
+            sudo usermod -aG docker "$USER" 2>/dev/null || true
+            echo "✅ Docker installiert"
+            ;;
+
+        darwin)
+            echo "   ⚠️  macOS erkannt. Bitte installiere Docker Desktop:"
+            echo "   https://docs.docker.com/desktop/mac/"
+            echo "   Danach 'bash setup.sh' erneut ausführen."
+            exit 1
+            ;;
+
+        *)
+            echo "   ⚠️  Unbekanntes OS: $OS_ID"
+            echo "   Bitte Docker manuell installieren: https://docs.docker.com/get-docker/"
+            exit 1
+            ;;
+    esac
+}
+
+ensure_docker_compose() {
+    # docker compose (plugin, v2) — preferred
+    if docker compose version &>/dev/null 2>&1; then
+        echo "✅ Docker Compose v2 (Plugin) gefunden"
+        return 0
+    fi
+
+    # docker-compose (standalone, v1 fallback)
+    if command -v docker-compose &>/dev/null; then
+        echo "✅ Docker Compose v1 gefunden"
+        # Alias so rest of script works
+        docker() { if [ "$1" = "compose" ]; then shift; command docker-compose "$@"; else command docker "$@"; fi; }
+        export -f docker 2>/dev/null || true
+        return 0
+    fi
+
+    echo "⬇️  Installiere Docker Compose Plugin..."
+    if command -v apt-get &>/dev/null; then
+        sudo apt-get install -y -qq docker-compose-plugin 2>/dev/null || \
+            sudo apt-get install -y -qq docker-compose 2>/dev/null || true
+    elif command -v dnf &>/dev/null; then
+        sudo dnf -y install docker-compose-plugin 2>/dev/null || true
+    fi
+
+    if docker compose version &>/dev/null 2>&1; then
+        echo "✅ Docker Compose Plugin installiert"
+    else
+        # Manual install as last resort
+        COMPOSE_VERSION="v2.27.1"
+        COMPOSE_ARCH="$(uname -m)"
+        [ "$COMPOSE_ARCH" = "x86_64" ] && COMPOSE_ARCH="x86_64"
+        [ "$COMPOSE_ARCH" = "aarch64" ] && COMPOSE_ARCH="aarch64"
+        COMPOSE_URL="https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-linux-${COMPOSE_ARCH}"
+        echo "   ⬇️  Lade Docker Compose ${COMPOSE_VERSION} herunter..."
+        sudo curl -fsSL "$COMPOSE_URL" -o /usr/local/lib/docker/cli-plugins/docker-compose 2>/dev/null || \
+            sudo curl -fsSL "$COMPOSE_URL" -o /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose 2>/dev/null || \
+            sudo chmod +x /usr/local/bin/docker-compose
+        echo "✅ Docker Compose manuell installiert"
+    fi
+}
+
 echo "🚀 Zero-Token TTS — Fresh System Setup"
 echo "========================================"
 echo ""
@@ -77,7 +203,13 @@ if ! command -v git &> /dev/null; then
 fi
 echo "✅ Git $(git --version | cut -d' ' -f3) gefunden"
 
-# 4. VS Code prüfen
+# 4. Docker installieren (falls nicht vorhanden)
+echo ""
+echo "🐳 Prüfe Docker..."
+ensure_docker
+ensure_docker_compose
+
+# 5. VS Code prüfen
 if ! command -v code &> /dev/null; then
     echo "⚠️  VS Code CLI 'code' nicht gefunden."
     echo "   Bitte installieren Sie VS Code von https://code.visualstudio.com/"
