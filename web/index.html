@@ -434,8 +434,12 @@
           },
         };
 
-        await navigator.clipboard.writeText(JSON.stringify(config, null, 2));
-        elements.healthOutput.textContent = JSON.stringify({ copied: true, target: "clipboard" }, null, 2);
+        try {
+          await navigator.clipboard.writeText(JSON.stringify(config, null, 2));
+          elements.healthOutput.textContent = JSON.stringify({ copied: true, target: "clipboard" }, null, 2);
+        } catch (error) {
+          elements.healthOutput.textContent = JSON.stringify({ copied: false, error: error.message }, null, 2);
+        }
       }
 
       async function speakText(text, voice = state.selectedVoice) {
