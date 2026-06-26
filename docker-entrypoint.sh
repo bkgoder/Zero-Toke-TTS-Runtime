@@ -1,7 +1,6 @@
 #!/bin/sh
 # Zero-Token TTS — Docker Entrypoint
 # Downloads Piper binary and default Eva model on first run if not present.
-set -e
 
 ASSETS_DIR="${TTS_ASSETS_DIR:-/app/tts-server}"
 mkdir -p "$ASSETS_DIR"
