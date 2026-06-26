@@ -670,16 +670,17 @@ export class TtsSidebarProvider implements vscode.WebviewViewProvider, vscode.Di
     if (message.type === 'dashboardError') $('statusText').textContent = message.message || 'Dashboard-Fehler';
     if (message.type === 'speakAudio' && message.audioBase64) {
       try {
-        const binary = atob(message.audioBase64);
+        const b64 = String(message.audioBase64).replace(/\s/g, '');
+        const binary = atob(b64);
         const bytes = new Uint8Array(binary.length);
         for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
         const blob = new Blob([bytes], { type: 'audio/wav' });
         const url = URL.createObjectURL(blob);
         const audio = new Audio(url);
         audio.onended = () => URL.revokeObjectURL(url);
-        audio.onerror = () => URL.revokeObjectURL(url);
-        audio.play().catch(() => {});
-      } catch (e) {}
+        audio.onerror = (e) => { console.error('TTS Audio Fehler', e); URL.revokeObjectURL(url); };
+        audio.play().catch((e) => console.error('TTS play() Fehler', e));
+      } catch (e) { console.error('TTS speakAudio Fehler', e); }
     }
   });
 
